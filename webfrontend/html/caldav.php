@@ -1,5 +1,4 @@
 <?php
-
 /*
 * @author    Sven Thierfelder & Christian Fenzl & Michael Schlenstedt
 * @copyright SD-Thierfelder & Christian Fenzl & Michael Schlenstedt
@@ -22,6 +21,8 @@ $calURL = @($_GET["calURL"]);
 $user = @($_GET["user"]);
 $pass = @($_GET["pass"]);
 $fwdays = @($_GET["fwdays"]);
+$httpauth = @($_GET["httpauth"]);
+$downhelper = @($_GET["downhelper"]);
 $getNextEvents=False;
 //$sevents = @explode("|",$_GET["events"]);
 // Split by Pipe | but not by escaped Pipe \|
@@ -71,7 +72,7 @@ if (strlen($test) > 0) {
 	$mqtt = false;
 }
 
-$myFile = "$lbpdatadir/caldav_".MD5($calURL).".ical";
+$myFile = "$lbplogdir/caldav_".MD5($calURL).".ical";
 
 //Get depth from conffile
 $caldavconf = parse_ini_file("$lbpconfigdir/caldav4lox.conf");
@@ -115,15 +116,21 @@ $timeend = microtime(true) - $timestart;
 
 //if (preg_match("/google\.com\/calendar/",$calURL)) {
 
-function curl_get_contents($url,$user,$pass) {
+function curl_get_contents($url,$user,$pass,$httpauth) {
 	   $ch=curl_init($url);
+	   if (!empty($httpauth)) {
+		   $auth = explode(":", $httpauth);
+		   curl_setopt($ch, CURLOPT_HTTPAUTH, "CURLAUTH_" . strtoupper($auth[0]));
+		   if (array_key_exists(1, $auth)) {
+			curl_setopt($ch, CURLOPT_XOAUTH2_BEARER, $auth[1] );
+		   }
+	   }
 	   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 	   curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 	   curl_setopt($ch, CURLOPT_USERPWD, "$user:$pass");
 	   curl_setopt($ch, CURLOPT_FAILONERROR, true);
 	   curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	   //curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 	   //curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
 	   //curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 	   curl_setopt($ch, CURLOPT_HTTPHEADER, array('User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'));
@@ -131,14 +138,14 @@ function curl_get_contents($url,$user,$pass) {
 	   if (curl_errno($ch)) {
 		echo "curl-Error: ".curl_error($ch)."\n";
 	   }
-	   //$curl_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-	   //if ($curl_code >= 400) {
-		//echo "calendar returned: $curl_code";
-	   //}
+	   $curl_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+	   if ($curl_code >= 400) {
+		echo "calendar returned: $curl_code";
+	   }
 	   return $result;
 }
 
-if (preg_match("|\/.*\.ics[/?]{0,1}|",$calURL)) {
+if (preg_match("|\/.*\.ics[/?]{0,1}|",$calURL) || isset($downhelper) ) {
 	//iCal Kalender
 	//echo "iCal Kalender erkannt\n";
 	$events = array();
@@ -147,24 +154,39 @@ if (preg_match("|\/.*\.ics[/?]{0,1}|",$calURL)) {
 			//echo "Cachefile abgelaufen";
 			$timeend = microtime(true) - $timestart;
 			//echo "$timeend - Lade Kalender von Google";
-			$fh = fopen($myFile, 'w') or die("can't open file");
-
-			set_error_handler(
-			create_function(
-			'$severity, $message, $file, $line',
-			'throw new ErrorException($message, $severity, $severity, $file, $line);'
-			)
-			);
-			try {
-				$Datei = curl_get_contents($calURL,$user,$pass);
+			if (isset($downhelper)) {
+				exec("cd ./downloadhelper && python3 main.py $calURL $user $pass $myFile", $output, $retval);
+				set_error_handler(
+				create_function(
+				'$severity, $message, $file, $line',
+				'throw new ErrorException($message, $severity, $severity, $file, $line);'
+				)
+				);
+				try {
+					$Datei = file_get_contents($myFile);
+				}
+				catch (Exception $e) {
+					echo $e->getMessage();
+				}
+				restore_error_handler();
+			} else {
+				set_error_handler(
+				create_function(
+				'$severity, $message, $file, $line',
+				'throw new ErrorException($message, $severity, $severity, $file, $line);'
+				)
+				);
+				$fh = fopen($myFile, 'w') or die("can't open file");
+				try {
+					$Datei = curl_get_contents($calURL,$user,$pass,$httpauth);
+				}
+				catch (Exception $e) {
+					echo $e->getMessage();
+				}
+				restore_error_handler();
+				fwrite($fh, $Datei);
+				fclose($fh);
 			}
-			catch (Exception $e) {
-				echo $e->getMessage();
-			}
-
-			restore_error_handler();
-			fwrite($fh, $Datei);
-			fclose($fh);
 			$timeend = microtime(true) - $timestart;
 			//echo "$timeend - Laden des Kalenders beendet.";
 		} else {
@@ -182,26 +204,41 @@ if (preg_match("|\/.*\.ics[/?]{0,1}|",$calURL)) {
 			catch (Exception $e) {
 				echo $e->getMessage();
 			}
-
 			restore_error_handler();
 			$timeend = microtime(true) - $timestart;
 			//echo "$timeend - Cachefile geladen.";
 		}
 	} else {
-		set_error_handler(
-		create_function(
-		'$severity, $message, $file, $line',
-		'throw new ErrorException($message, $severity, $severity, $file, $line);'
-		)
-		);
-		try {
-			$Datei = curl_get_contents($calURL,$user,$pass);
+		if (isset($downhelper)) {
+			$last_line = system("cd ./downloadhelper && python3 main.py $calURL $user $pass $myFile", $retval);
+			set_error_handler(
+			create_function(
+			'$severity, $message, $file, $line',
+			'throw new ErrorException($message, $severity, $severity, $file, $line);'
+			)
+			);
+			try {
+				$Datei = file_get_contents($myFile);
+			}
+			catch (Exception $e) {
+				echo $e->getMessage();
+			}
+			restore_error_handler();
+		} else {
+			set_error_handler(
+			create_function(
+			'$severity, $message, $file, $line',
+			'throw new ErrorException($message, $severity, $severity, $file, $line);'
+			)
+			);
+			try {
+				$Datei = curl_get_contents($calURL,$user,$pass,$httpauth);
+			}
+			catch (Exception $e) {
+				echo $e->getMessage();
+			}
+			restore_error_handler();
 		}
-		catch (Exception $e) {
-			echo $e->getMessage();
-		}
-
-		restore_error_handler();
 	}
 	$timeend = microtime(true) - $timestart;
 	//echo "$timeend - Beginne mit Eintragssplitting\n";

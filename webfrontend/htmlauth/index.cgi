@@ -18,11 +18,26 @@ my  $cfg;
 my  $conf;
 our $selecteddepth0 = "";
 our $selecteddepth1 = "";
+our $selecteddownhelper0 = "";
+our $selecteddownhelper1 = "";
+our $selectedhttpauth0 = "";
+our $selectedhttpauth1 = "";
+our $selectedhttpauth2 = "";
+our $selectedhttpauth3 = "";
+our $selectedhttpauth4 = "";
+our $selectedhttpauth5 = "";
+our $selectedhttpauth6 = "";
+our $selectedhttpauth7 = "";
+our $selectedhttpauth8 = "";
+our $selectedhttpauth9 = "";
 my  $curl;
 our $depth;
 our $caldavurl;
 our $caldavuser;
 our $caldavpass;
+our $httpauth;
+our $bearer;
+our $downhelper;
 our $fwdays;
 our $delay;
 our $events;
@@ -68,11 +83,14 @@ foreach (split(/&/,$ENV{'QUERY_STRING'}))
 	if ( !$query{'caldavurl'} )    { if ( param('caldavurl')    ) { $caldavurl    = param('caldavurl');               } else { $caldavurl    = "";     } } else { $caldavurl    = $query{'caldavurl'};               }
 	if ( !$query{'caldavuser'} )   { if ( param('caldavuser')   ) { $caldavuser   = param('caldavuser');              } else { $caldavuser   = "";     } } else { $caldavuser   = $query{'caldavuser'};              }
 	if ( !$query{'caldavpass'} )   { if ( param('caldavpass')   ) { $caldavpass   = param('caldavpass');              } else { $caldavpass   = "";     } } else { $caldavpass   = $query{'caldavpass'};              }
+	if ( !$query{'httpauth'} )     { if ( param('httpauth')     ) { $httpauth     = param('httpauth');                } else { $httpauth     = "";     } } else { $httpauth     = $query{'httpauth'};                }
+	if ( !$query{'bearer'} )       { if ( param('bearer')       ) { $bearer       = param('bearer');                  } else { $bearer       = "";     } } else { $bearer       = $query{'bearer'};                  }
+	if ( !$query{'downhelper'} )   { if ( param('downhelper')   ) { $downhelper   = param('downhelper');              } else { $downhelper   = "";     } } else { $downhelper   = $query{'downhelper'};            }
 	if ( !$query{'fwdays'} )       { if ( param('fwdays')       ) { $fwdays       = param('fwdays');                  } else { $fwdays       = "";     } } else { $fwdays       = $query{'fwdays'};                  }
 	if ( !$query{'delay'} )        { if ( param('delay')        ) { $delay        = param('delay');                   } else { $delay        = "";     } } else { $delay        = $query{'delay'};                   }
 	if ( !$query{'events'} )       { if ( param('events')       ) { $events       = param('events');                  } else { $events       = "";     } } else { $events       = $query{'events'};                  }
 	if ( !$query{'dotest'} )       { if ( param('dotest')       ) { $dotest       = param('dotest');                  } else { $dotest       = "";     } } else { $dotest       = $query{'dotest'};                  }
-  if ( !$query{'cache'} )        { if ( param('cache')        ) { $cache        = param('cache');                   } else { $cache        = "";     } } else { $cache        = $query{'cache'};                   }
+	if ( !$query{'cache'} )        { if ( param('cache')        ) { $cache        = param('cache');                   } else { $cache        = "";     } } else { $cache        = $query{'cache'};                   }
 LOGDEB "Done";
 
 LOGDEB "read CalDAV-4-Lox settings";
@@ -81,6 +99,17 @@ $conf = new Config::Simple("$lbpconfigdir/caldav4lox.conf");
 $depth = $conf->param('general.Depth');
 LOGDEB "Done";
 if ( $depth == 0 ) {$selecteddepth0="selected"} else { $selecteddepth1="selected"}
+if ( $downhelper == 0 ) {$selecteddownhelper0="selected"} else { $selecteddownhelper1="selected"}
+if ( $httpauth eq "ANY" ) {$selectedhttpauth0="selected"};
+if ( $httpauth eq "ANYSAFE" ) {$selectedhttpauth1="selected"};
+if ( $httpauth eq "BASIC" ) {$selectedhttpauth2="selected"};
+if ( $httpauth eq "DIGEST" ) {$selectedhttpauth3="selected"};
+if ( $httpauth eq "DIGEST_IE" ) {$selectedhttpauth4="selected"};
+if ( $httpauth eq "BEARER" ) {$selectedhttpauth5="selected"};
+if ( $httpauth eq "NEGOTIATE" ) {$selectedhttpauth6="selected"};
+if ( $httpauth eq "NTLM" ) {$selectedhttpauth7="selected"};
+if ( $httpauth eq "NTLM_WB" ) {$selectedhttpauth8="selected"};
+if ( $httpauth eq "ONLY" ) {$selectedhttpauth9="selected"};
 
 LOGDEB "retrieve the local ip";
 require IO::Socket::INET;
@@ -101,7 +130,7 @@ LOGDEB "create the page - beginn";
 # Title
 $template_title = "CalDAV-4-Lox";
 # Create help page
-$helplink = "http://www.loxwiki.eu/display/LOXBERRY/CalDAV-4-Lox";
+$helplink = "https://wiki.loxberry.de/plugins/caldav_4_lox/start";
 $helptemplate = "help.html";
 LOGDEB "print out the header";
 LoxBerry::Web::lbheader(undef,$helplink,$helptemplate);
@@ -117,10 +146,25 @@ my $maintemplate = HTML::Template->new(
 $maintemplate->param("psubfolder",$lbpplugindir);
 $maintemplate->param("selecteddepth0", $selecteddepth0);
 $maintemplate->param("selecteddepth1", $selecteddepth1);
+$maintemplate->param("selectedhttpauth0", $selectedhttpauth0);
+$maintemplate->param("selectedhttpauth1", $selectedhttpauth1);
+$maintemplate->param("selectedhttpauth2", $selectedhttpauth2);
+$maintemplate->param("selectedhttpauth3", $selectedhttpauth3);
+$maintemplate->param("selectedhttpauth4", $selectedhttpauth4);
+$maintemplate->param("selectedhttpauth5", $selectedhttpauth5);
+$maintemplate->param("selectedhttpauth6", $selectedhttpauth6);
+$maintemplate->param("selectedhttpauth7", $selectedhttpauth7);
+$maintemplate->param("selectedhttpauth8", $selectedhttpauth8);
+$maintemplate->param("selectedhttpauth9", $selectedhttpauth9);
+$maintemplate->param("selecteddownhelper0", $selecteddownhelper0);
+$maintemplate->param("selecteddownhelper1", $selecteddownhelper1);
 $maintemplate->param("lang",lblanguage());
 $maintemplate->param("caldavurl",$caldavurl);
 $maintemplate->param("caldavuser",$caldavuser);
 $maintemplate->param("caldavpass",$caldavpass);
+$maintemplate->param("httpauth",$httpauth);
+$maintemplate->param("bearer",$bearer);
+$maintemplate->param("downhelper",$downhelper);
 $maintemplate->param("fwdays",$fwdays);
 $maintemplate->param("delay",$delay);
 $maintemplate->param("cache",$cache);
@@ -158,8 +202,11 @@ if ( $caldavurl =~ m{
 	$tempevents =~ s/ //g;
 	my $tempURL = "http://$localip$localPort/plugins/$lbpplugindir/caldav.php?calURL=$tempcalurl&user=$caldavuser&pass=$caldavpass";
 	if ( $fwdays ) { if (($fwdays > 0) && ($fwdays < 364)) {$tempURL .= "&fwdays=$fwdays";}}
-  if ( $delay ) { if (($delay > 0) && ($fwdays < 1440)) {$tempURL.= "&delay=$delay";}}
-  if ( $cache ) { if (($cache > 0) && ($cache < 1440)) {$tempURL.= "&cache=$cache";}}
+	if ( $delay ) { if (($delay > 0) && ($fwdays < 1440)) {$tempURL.= "&delay=$delay";}}
+	if ( $cache ) { if (($cache > 0) && ($cache < 1440)) {$tempURL.= "&cache=$cache";}}
+	if ( $httpauth ) { $tempURL.= "&httpauth=$httpauth";}
+	if ( $bearer && $httpauth ) { $tempURL.= ":$bearer";}
+	if ( $downhelper ) { $tempURL.= "&downhelper=$downhelper";}
 	$tempURL .= "&events=$tempevents";
 	print "<p>". $L{"LABEL.TXT0006"} . ": <a href=$tempURL target='_blank'>$tempURL</a></p>\n";
 	LOGDEB "test the calendar";

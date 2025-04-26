@@ -94,6 +94,54 @@ function setDepth(selobject)
 													</tr>
 													<tr>
 														<td width="25%">
+															<label id="labeldownhelper"><TMPL_VAR LABEL.DOWNHELPER></label>
+														</td>
+														<td width="50%" colspan="2">
+																<select id="downhelper" name="downhelper" data-mini="true">
+																	<option <TMPL_VAR selecteddownhelper0> value="0"><TMPL_VAR LABEL.NO></option>
+																	<option <TMPL_VAR selecteddownhelper1> value="1"><TMPL_VAR LABEL.YES></option>
+																</select>
+														</td>
+														<td width="25%">
+															&nbsp;
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelhttpauth"><TMPL_VAR LABEL.HTTPAUTH></label>
+														</td>
+														<td width="50%" colspan="2">
+																<select id="httpauth" name="httpauth" data-mini="true">
+																	<option <TMPL_VAR selectedhttpauth0> value="ANY">ANY</option>
+																	<option <TMPL_VAR selectedhttpauth1> value="ANYSAFE">ANYSAFE</option>
+																	<option <TMPL_VAR selectedhttpauth2> value="BASIC">BASIC</option>
+																	<option <TMPL_VAR selectedhttpauth3> value="DIGEST">DIGEST</option>
+																	<option <TMPL_VAR selectedhttpauth4> value="DIGEST_IE">DIGEST_IE</option>
+																	<option <TMPL_VAR selectedhttpauth5> value="BEARER">BEARER (OAUTH2)</option>
+																	<option <TMPL_VAR selectedhttpauth6> value="NEGOTIATE">NEGOTIATE</option>
+																	<option <TMPL_VAR selectedhttpauth7> value="NTLM">NTLM</option>
+																	<option <TMPL_VAR selectedhttpauth8> value="NTLM_WB">NTLM_WB</option>
+																	<option <TMPL_VAR selectedhttpauth9> value="ONLY">ONLY</option>
+																</select>
+														</td>
+														<td width="25%">
+															&nbsp;
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
+															<label id="labelbearer"><TMPL_VAR LABEL.BEARER></label>
+														</td>
+														<td width="50%" colspan="2">
+															<input id="bearer" name="bearer" type="text" class="textfield""
+																value="<TMPL_VAR bearer>" width="10%">
+														</td>
+														<td width="25%">
+															&nbsp;
+														</td>
+													</tr>
+													<tr>
+														<td width="25%">
 															<label id="labelfwdays"><TMPL_VAR LABEL.DAYSINFUTURE></label>
 														</td>
 														<td width="10%">
@@ -149,12 +197,12 @@ function setDepth(selobject)
 														</td>
 													</tr>
 													<tr>
-														<td width="25%">&nbsp</td>
+														<td width="25%">&nbsp;</td>
 														<td width="50%" colspan="2">
 															<input id="dotest" name="dotest" type="submit" value="<TMPL_VAR LABEL.DOTEST>">
 														</td>		
 														<td width="25%">
-															&nbsp
+															&nbsp;
 														</td>
 													</tr>
 													<tr>
