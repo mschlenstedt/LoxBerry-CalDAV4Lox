@@ -4,6 +4,7 @@ from icalendar import Calendar, Event
 import os
 import sys
 #from ftplib import FTP
+import datetime
 
 def create_folder_if_missing(folder_name):
     """
@@ -26,7 +27,15 @@ def export_calendar():
                               password=sys.argv[3])
     principal = client.principal()
     import_calendar = principal.calendars()[0]
-    events = import_calendar.events()
+    #events = import_calendar.events()
+    ustart = datetime.datetime.fromtimestamp(int(sys.argv[5]))
+    uend = datetime.datetime.fromtimestamp(int(sys.argv[6]))
+    events = import_calendar.search(
+        start=ustart,
+        end=uend,
+        event=True,
+        expand=True,
+    )
     #print(f'Found {len(events)} calendar events.')
     for import_event in import_calendar.events():
         export_event = Event()

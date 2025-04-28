@@ -155,7 +155,7 @@ if (preg_match("|\/.*\.ics[/?]{0,1}|",$calURL) || isset($downhelper) ) {
 			$timeend = microtime(true) - $timestart;
 			//echo "$timeend - Lade Kalender von Google";
 			if (isset($downhelper)) {
-				exec("cd ./downloadhelper && python3 main.py $calURL $user $pass $myFile", $output, $retval);
+				exec("cd ./downloadhelper && python3 main.py $calURL $user $pass $myFile $ustart $uend", $output, $retval);
 				set_error_handler(
 				create_function(
 				'$severity, $message, $file, $line',
@@ -210,7 +210,7 @@ if (preg_match("|\/.*\.ics[/?]{0,1}|",$calURL) || isset($downhelper) ) {
 		}
 	} else {
 		if (isset($downhelper)) {
-			$last_line = system("cd ./downloadhelper && python3 main.py $calURL $user $pass $myFile", $retval);
+			$last_line = system("cd ./downloadhelper && python3 main.py $calURL $user $pass $myFile $ustart $uend", $retval);
 			set_error_handler(
 			create_function(
 			'$severity, $message, $file, $line',
